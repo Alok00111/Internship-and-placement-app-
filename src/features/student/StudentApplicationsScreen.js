@@ -1,90 +1,91 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, FlatList, MaterialIcons } from 'react-native';
 import { JobContext } from '../../context/JobContext';
 
 const StudentApplicationsScreen = () => {
   const { jobs, currentUser } = useContext(JobContext);
 
-  // Find jobs where the current user is in the applications list
-  const myApplications = jobs.filter(job => 
-    job.applications.some(app => app.studentName === currentUser.name)
-  );
+  // Filter all jobs to find where the current student has applied
+  // We check if the student's name exists in the applications array of any job
+  const myApplications = jobs.reduce((acc, job) => {
+    if (job.applications) {
+      const userApp = job.applications.find(app => app.studentName === currentUser?.name);
+      if (userApp) {
+        acc.push({
+          id: job.id,
+          title: job.title,
+          company: job.company || job.companyName,
+          status: userApp.status,
+          appliedAt: userApp.appliedAt
+        });
+      }
+    }
+    return acc;
+  }, []);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Selected': return '#22C55E'; // Green
-      case 'Rejected': return '#EF4444'; // Red
-      default: return '#3B82F6'; // Blue for Applied
+  const getStatusStyle = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'applied': return styles.statusApplied;
+      case 'shortlisted': return styles.statusShortlisted;
+      case 'rejected': return styles.statusRejected;
+      default: return styles.statusDefault;
     }
   };
 
-  const renderItem = ({ item }) => {
-    // Get specific status for this user
-    const userApp = item.applications.find(app => app.studentName === currentUser.name);
-    const status = userApp ? userApp.status : 'Applied';
-    const color = getStatusColor(status);
-
-    return (
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <Text style={styles.company}>{item.company}</Text>
-          <View style={[styles.badge, { backgroundColor: `${color}20` }]}>
-            <Text style={[styles.badgeText, { color }]}>{status}</Text>
-          </View>
-        </View>
-        
-        <Text style={styles.title}>{item.title}</Text>
-        
-        <View style={styles.divider} />
-        
-        <View style={styles.footer}>
-          <MaterialIcons name="calendar-today" size={14} color="#94A3B8" />
-          <Text style={styles.footerText}>Applied Recently</Text>
-        </View>
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardInfo}>
+        <Text style={styles.jobTitle}>{item.title}</Text>
+        <Text style={styles.companyName}>{item.company}</Text>
       </View>
-    );
-  };
+      <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
+        <Text style={styles.statusText}>{item.status}</Text>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={myApplications}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <MaterialIcons name="assignment" size={64} color="#E2E8F0" />
-            <Text style={styles.emptyText}>You haven't applied to any jobs yet</Text>
-          </View>
-        }
-      />
+      {myApplications.length > 0 ? (
+        <FlatList
+          data={myApplications}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContainer}
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>You haven't applied for any jobs yet.</Text>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  list: { padding: 16 },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  listContainer: { padding: 16 },
   card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
+    backgroundColor: '#fff',
     padding: 16,
-    marginBottom: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#e2e8f0',
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  company: { color: '#64748B', fontWeight: '600' },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  badgeText: { fontWeight: 'bold', fontSize: 12 },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#1E293B', marginBottom: 12 },
-  divider: { height: 1, backgroundColor: '#E2E8F0', marginBottom: 12 },
-  footer: { flexDirection: 'row', alignItems: 'center' },
-  footerText: { marginLeft: 6, color: '#94A3B8', fontSize: 12 },
-  emptyContainer: { alignItems: 'center', marginTop: 100 },
-  emptyText: { color: '#94A3B8', marginTop: 16 },
+  jobTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b' },
+  companyName: { fontSize: 14, color: '#64748b', marginTop: 2 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  statusText: { fontSize: 12, fontWeight: 'bold' },
+  statusApplied: { backgroundColor: '#dcfce7' }, // Light Green
+  statusShortlisted: { backgroundColor: '#dbeafe' }, // Light Blue
+  statusRejected: { backgroundColor: '#fee2e2' }, // Light Red
+  statusDefault: { backgroundColor: '#f1f5f9' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyText: { color: '#94a3b8', fontSize: 16 },
 });
 
 export default StudentApplicationsScreen;

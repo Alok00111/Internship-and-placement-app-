@@ -4,39 +4,41 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { JobContext } from '../../context/JobContext';
 
 const StudentJobsScreen = ({ navigation }) => {
-  const { jobs, currentUser } = useContext(JobContext);
+  const { jobs, currentUser, applyForJob } = useContext(JobContext);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedJob, setSelectedJob] = useState(null); // For Modal
+  const [selectedJob, setSelectedJob] = useState(null); 
 
-  // 1. Filter jobs: Must be 'Published'
-  const publishedJobs = jobs.filter(job => job.status === 'Published');
+  // Filter jobs: Must be 'live' (Approved by Admin and verified by PC)
+  const liveJobs = jobs.filter(job => job.status === 'live');
 
-  // 2. Filter by Search Query
-  const filteredJobs = publishedJobs.filter(job => {
+  // Filter by Search Query
+  const filteredJobs = liveJobs.filter(job => {
     const query = searchQuery.toLowerCase();
-    return job.title.toLowerCase().includes(query) || 
-           job.company.toLowerCase().includes(query);
+    const titleMatch = job.title?.toLowerCase().includes(query);
+    const companyMatch = (job.company || job.companyName)?.toLowerCase().includes(query);
+    return titleMatch || companyMatch;
   });
 
   const handleApply = (job) => {
-    // Check if already applied (Simulated logic)
-    const isApplied = job.applications.some(app => app.studentName === currentUser.name);
+    // 1. Check if user is logged in
+    if (!currentUser) {
+      Alert.alert("Error", "Please log in to apply for jobs.");
+      return;
+    }
 
-    if (isApplied) {
+    // 2. Check if already applied (using studentName from context)
+    const hasApplied = job.applications?.some(app => app.studentName === currentUser.name);
+
+    if (hasApplied) {
       Alert.alert("Info", "You have already applied for this job.");
       return;
     }
 
-    // In a real app, we would update the backend here.
-    // For now, we simulate success.
-    job.applications.push({
-      studentName: currentUser.name,
-      status: 'Applied',
-      appliedAt: new Date(),
-    });
+    // 3. Call Global Context Function to persist the application
+    applyForJob(job.id, currentUser.name);
 
     Alert.alert("Success", "Application Submitted Successfully!");
-    setSelectedJob(null); // Close modal if open
+    setSelectedJob(null); 
   };
 
   const renderJobCard = ({ item }) => (
@@ -47,18 +49,18 @@ const StudentJobsScreen = ({ navigation }) => {
         </View>
         <View style={styles.headerText}>
           <Text style={styles.jobTitle}>{item.title}</Text>
-          <Text style={styles.companyName}>{item.company}</Text>
+          <Text style={styles.companyName}>{item.company || item.companyName || 'Corporate Partner'}</Text>
         </View>
       </View>
 
       <View style={styles.tagsRow}>
         <View style={styles.tag}>
           <MaterialIcons name="timer" size={14} color="#475569" />
-          <Text style={styles.tagText}>{item.duration}</Text>
+          <Text style={styles.tagText}>{item.duration || 'N/A'}</Text>
         </View>
         <View style={styles.tag}>
           <MaterialIcons name="attach-money" size={14} color="#475569" />
-          <Text style={styles.tagText}>{item.stipend}</Text>
+          <Text style={styles.tagText}>{item.stipend || 'Unpaid'}</Text>
         </View>
       </View>
 
@@ -99,7 +101,7 @@ const StudentJobsScreen = ({ navigation }) => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialIcons name="search-off" size={64} color="#E2E8F0" />
-            <Text style={styles.emptyText}>No jobs found</Text>
+            <Text style={styles.emptyText}>No live jobs available right now</Text>
           </View>
         }
       />
@@ -117,7 +119,7 @@ const StudentJobsScreen = ({ navigation }) => {
             
             <ScrollView style={styles.modalContent}>
               <Text style={styles.detailTitle}>{selectedJob.title}</Text>
-              <Text style={styles.detailCompany}>{selectedJob.company}</Text>
+              <Text style={styles.detailCompany}>{selectedJob.company || selectedJob.companyName}</Text>
               
               <View style={styles.detailSection}>
                 <Text style={styles.sectionHeader}>Description</Text>
@@ -126,12 +128,12 @@ const StudentJobsScreen = ({ navigation }) => {
 
               <View style={styles.detailSection}>
                 <Text style={styles.sectionHeader}>Eligibility</Text>
-                <Text style={styles.sectionBody}>{selectedJob.eligibility}</Text>
+                <Text style={styles.sectionBody}>{selectedJob.eligibility || 'Open to all'}</Text>
               </View>
 
                <View style={styles.detailSection}>
                 <Text style={styles.sectionHeader}>Stipend</Text>
-                <Text style={styles.sectionBody}>₹{selectedJob.stipend} / month</Text>
+                <Text style={styles.sectionBody}>{selectedJob.stipend ? `₹${selectedJob.stipend} / month` : 'Unpaid'}</Text>
               </View>
             </ScrollView>
 
@@ -205,7 +207,6 @@ const styles = StyleSheet.create({
   emptyContainer: { alignItems: 'center', marginTop: 50 },
   emptyText: { color: '#94A3B8', marginTop: 16 },
   
-  // Modal Styles
   modalContainer: { flex: 1, backgroundColor: 'white', marginTop: 20 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   modalTitle: { fontSize: 18, fontWeight: 'bold' },

@@ -1,63 +1,41 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { JobContext } from '../../context/JobContext';
 
-const PcReviewScreen = ({ navigation }) => {
-  const { jobs, setJobs } = useContext(JobContext);
+const PcReviewScreen = () => {
+  const { jobs, updateJobStatus } = useContext(JobContext);
 
-  // PC only sees 'Verified' jobs (passed Admin check)
-  const jobsToReview = jobs.filter(job => job.status === 'Verified');
+  // PC reviews jobs that are already 'approved' by Admin
+  const jobsToVerify = jobs.filter(job => job.status === 'approved');
 
-  const handleUpdateStatus = (jobId, newStatus) => {
-    // 1. Create a NEW array with the updated job to trigger a re-render
-    const updatedJobs = jobs.map(job => {
-      if (job.id === jobId) {
-        return { ...job, status: newStatus };
-      }
-      return job;
-    });
-
-    // 2. Update Global State
-    setJobs(updatedJobs);
-
-    // 3. Show feedback
-    if (newStatus === 'Published') {
-      Alert.alert("Success", "Job Published to Students!");
-    } else {
-      Alert.alert("Returned", "Job sent back to Admin/Corporate");
-    }
+  const handlePcAction = (id, status) => {
+    // If PC approves, it goes 'live' for students
+    const finalStatus = status === 'verify' ? 'live' : 'rejected_by_pc';
+    updateJobStatus(id, finalStatus);
+    Alert.alert("Success", `Job is now ${finalStatus}`);
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>Admin Verified</Text>
-        </View>
-        <Text style={styles.company}>{item.company}</Text>
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>Admin Approved</Text>
       </View>
-      
-      <View style={{ height: 12 }} />
       <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.stipend}>Stipend: ₹{item.stipend}</Text>
-      <View style={{ height: 16 }} />
-
-      <View style={styles.actions}>
+      <Text style={styles.company}>{item.companyName || 'Corporate Partner'}</Text>
+      
+      <View style={styles.buttonContainer}>
         <TouchableOpacity 
-          style={[styles.btn, styles.btnOutline]} 
-          onPress={() => handleUpdateStatus(item.id, 'Rejected')}
+          style={[styles.button, styles.verifyButton]} 
+          onPress={() => handlePcAction(item.id, 'verify')}
         >
-          <Text style={{ color: '#EF4444' }}>Send Back</Text>
+          <Text style={styles.buttonText}>Publish to Students</Text>
         </TouchableOpacity>
-        
-        <View style={{ width: 12 }} />
-        
+
         <TouchableOpacity 
-          style={[styles.btn, styles.btnFill]} 
-          onPress={() => handleUpdateStatus(item.id, 'Published')}
+          style={[styles.button, styles.rejectButton]} 
+          onPress={() => handlePcAction(item.id, 'reject')}
         >
-          <Text style={{ color: 'white' }}>Publish</Text>
+          <Text style={styles.buttonText}>Reject</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -65,72 +43,36 @@ const PcReviewScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Custom Header with Back Button */}
-      <View style={styles.topBar}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={styles.backButton}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#1E293B" />
-        </TouchableOpacity>
-        <Text style={styles.screenTitle}>Final Approval</Text>
-      </View>
-
-      {jobsToReview.length === 0 ? (
-        <View style={styles.center}>
-          <MaterialIcons name="check-circle-outline" size={64} color="#CBD5E1" />
-          <Text style={{ color: '#94A3B8', marginTop: 16 }}>All jobs are published!</Text>
-        </View>
-      ) : (
+      {jobsToVerify.length > 0 ? (
         <FlatList
-          data={jobsToReview}
+          data={jobsToVerify}
+          keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 15 }}
         />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No admin-approved jobs waiting for verification.</Text>
+        </View>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 50, // Status bar spacing
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 16,
-    borderRadius: 8,
-    backgroundColor: '#F8FAFC',
-  },
-  screenTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1E293B',
-  },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  card: {
-    padding: 16, marginBottom: 16, borderRadius: 12,
-    borderWidth: 1, borderColor: '#E2E8F0',
-  },
-  header: { flexDirection: 'row', justifyContent: 'space-between' },
-  tag: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  tagText: { color: '#3B82F6', fontSize: 10, fontWeight: 'bold' },
-  company: { fontWeight: 'bold', color: '#64748B' },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
-  stipend: { fontWeight: '500', marginTop: 4 },
-  actions: { flexDirection: 'row' },
-  btn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 8 },
-  btnOutline: { borderWidth: 1, borderColor: '#EF4444' },
-  btnFill: { backgroundColor: '#1E293B' },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  card: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#e2e8f0' },
+  badge: { backgroundColor: '#dcfce7', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, marginBottom: 10 },
+  badgeText: { color: '#166534', fontSize: 12, fontWeight: 'bold' },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
+  company: { fontSize: 14, color: '#64748b', marginBottom: 15 },
+  buttonContainer: { flexDirection: 'row', justifyContent: 'space-between' },
+  button: { flex: 0.48, padding: 12, borderRadius: 8, alignItems: 'center' },
+  verifyButton: { backgroundColor: '#2563eb' },
+  rejectButton: { backgroundColor: '#ef4444' },
+  buttonText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyText: { color: '#94a3b8', fontSize: 16 }
 });
 
 export default PcReviewScreen;
