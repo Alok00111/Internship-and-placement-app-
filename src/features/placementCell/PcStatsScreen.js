@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { JobContext } from '../context/JobContext';
+import { JobContext } from '../../context/JobContext';
 
 const PcStatsScreen = () => {
   const { jobs, companies } = useContext(JobContext);

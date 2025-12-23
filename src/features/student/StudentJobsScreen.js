@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, Modal, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { JobContext } from '../context/JobContext';
+import { JobContext } from '../../context/JobContext';
 
 const StudentJobsScreen = ({ navigation }) => {
   const { jobs, currentUser } = useContext(JobContext);

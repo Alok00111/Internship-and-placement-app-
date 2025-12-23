@@ -1,6 +1,6 @@
     import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { JobContext } from '../context/JobContext';
+import { JobContext } from '../../context/JobContext';
 
 const PostJobScreen = ({ navigation }) => {
   const { addJob } = useContext(JobContext);

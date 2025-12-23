@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { JobContext } from '../context/JobContext';
+import { JobContext } from '../../context/JobContext';
 
 const ROLES = ["Student", "Corporate", "Master Admin", "Placement Coordinator"];
 
