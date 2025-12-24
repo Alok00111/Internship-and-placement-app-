@@ -7,6 +7,7 @@ import SplashScreen from '../features/auth/SplashScreen';
 import LoginScreen from '../features/auth/LoginScreen';
 
 // Shared Features
+import InstitutionSelection from '../features/shared/InstitutionSelection'; // <--- IMPORTED HERE
 import DashboardScreen from '../features/shared/DashboardScreen';
 import NotificationsScreen from '../features/shared/NotificationsScreen';
 
@@ -33,9 +34,16 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator 
-        initialRouteName="Splash" 
+        initialRouteName="InstitutionSelection" // <--- CHANGED START POINT
         screenOptions={{ headerShown: false }}
       >
+        {/* Entry Layer */}
+        <Stack.Screen 
+          name="InstitutionSelection" 
+          component={InstitutionSelection} 
+          options={{ headerShown: false }} 
+        />
+
         {/* Auth */}
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />

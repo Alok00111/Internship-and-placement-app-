@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react
 import { JobContext } from '../../context/JobContext';
 
 const AdminReviewScreen = () => {
-  const { jobs, updateJobStatus } = useContext(JobContext);
+  const { jobs, updateJobStatus, currentUser } = useContext(JobContext);
 
-  // Only show jobs that are currently pending review
-  const pendingJobs = jobs.filter(job => job.status === 'pending');
+  // --- SECURITY FIX: Filter by University ID ---
+  const pendingJobs = jobs.filter(job => 
+    job.status === 'pending' && 
+    job.universityId === currentUser?.universityId // <--- The Magic Line
+  );
 
   const handleAction = (id, status) => {
     updateJobStatus(id, status);
@@ -16,7 +19,7 @@ const AdminReviewScreen = () => {
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.company}>{item.companyName || 'Corporate Partner'}</Text>
+      <Text style={styles.company}>{item.company || item.companyName}</Text>
       <Text style={styles.description}>{item.description}</Text>
       
       <View style={styles.buttonContainer}>
@@ -48,7 +51,7 @@ const AdminReviewScreen = () => {
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No pending proposals to review.</Text>
+          <Text style={styles.emptyText}>No pending proposals for your university.</Text>
         </View>
       )}
     </View>

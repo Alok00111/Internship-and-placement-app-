@@ -1,9 +1,10 @@
-    import React, { useState, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { JobContext } from '../../context/JobContext';
 
 const PostJobScreen = ({ navigation }) => {
-  const { addJob } = useContext(JobContext);
+  // 1. Get currentUser to access universityId
+  const { addJob, currentUser } = useContext(JobContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
@@ -30,7 +31,11 @@ const PostJobScreen = ({ navigation }) => {
         duration,
         stipend,
         eligibility,
-        company: "My Company", // Mocked logged-in company
+        // 2. Use Real User Data & Stamp University ID
+        company: currentUser?.name || "Corporate Partner", 
+        universityId: currentUser?.universityId, // <--- CRITICAL: Locks job to this Uni
+        postedBy: currentUser?.email,
+        date: new Date().toISOString()
       };
 
       addJob(newJob);

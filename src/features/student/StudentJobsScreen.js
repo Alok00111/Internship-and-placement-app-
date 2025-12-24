@@ -8,8 +8,13 @@ const StudentJobsScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState(null); 
 
-  // Filter jobs: Must be 'live' (Approved by Admin and verified by PC)
-  const liveJobs = jobs.filter(job => job.status === 'live');
+  // --- UPDATED FILTER LOGIC ---
+  // 1. Must be 'live' (Approved by Admin & PC)
+  // 2. Must match the Student's University ID
+  const liveJobs = jobs.filter(job => 
+    job.status === 'live' && 
+    job.universityId === currentUser?.universityId
+  );
 
   // Filter by Search Query
   const filteredJobs = liveJobs.filter(job => {
@@ -101,7 +106,7 @@ const StudentJobsScreen = ({ navigation }) => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialIcons name="search-off" size={64} color="#E2E8F0" />
-            <Text style={styles.emptyText}>No live jobs available right now</Text>
+            <Text style={styles.emptyText}>No live jobs available for your university.</Text>
           </View>
         }
       />

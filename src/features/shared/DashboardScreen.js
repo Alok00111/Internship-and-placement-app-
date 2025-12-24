@@ -1,126 +1,153 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
+import React, { useContext } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { JobContext } from '../../context/JobContext';
 
-const DashboardScreen = ({ route, navigation }) => {
-  const { role } = route.params || { role: 'Student' };
+const DashboardScreen = ({ navigation }) => {
+  const { currentUser } = useContext(JobContext);
 
-  const getMenuOptions = () => {
-    switch (role) {
-      case 'Corporate':
-        return [
-          { id: '1', title: "Post Proposal", icon: "add-circle-outline", screen: "PostJob" },
-          { id: '2', title: "My Proposals", icon: "list-alt", screen: "CorporateProposals" },
-          { id: '3', title: "Applicants", icon: "people-outline", screen: "CorporateApplicants" },
-          { id: '4', title: "Company Profile", icon: "business", screen: "CorporateProfile" },
-        ];
-      case 'Master Admin':
-        return [
-          { id: '1', title: "Review Proposals", icon: "rate-review", screen: "AdminReview" },
-          { id: '2', title: "Verify Corporates", icon: "verified-user", screen: "AdminVerify" },
-        ];
-      case 'Placement Coordinator':
-        return [
-          { id: '1', title: "Final Approval", icon: "checklist", screen: "PcReview" },
-          { id: '2', title: "Placement Stats", icon: "analytics", screen: "PcStats" },
-        ];
-      case 'Student':
-      default:
-        return [
-          { id: '1', title: "Find Jobs", icon: "search", screen: "StudentJobs" },
-          { id: '2', title: "Applied", icon: "history", screen: "StudentApplications" },
-          { id: '3', title: "My Profile", icon: "person-outline", screen: "StudentProfile" },
-        ];
-    }
-  };
+  // If for some reason user is null, send them back to login
+  if (!currentUser) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+        <TouchableOpacity onPress={() => navigation.replace('Login')}>
+          <Text style={{color: 'blue', marginTop: 20}}>Go to Login</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
-  const handleNavigation = (screenName) => {
-    // --- UPDATED LOGIC FOR STEP 5 ---
-    // All screens are now implemented!
-    navigation.navigate(screenName);
-  };
-
-  const renderCard = ({ item }) => (
+  // --- COMPONENT: MENU BUTTON ---
+  const MenuButton = ({ title, icon, color, route }) => (
     <TouchableOpacity 
       style={styles.card} 
-      onPress={() => handleNavigation(item.screen)}
+      onPress={() => navigation.navigate(route)}
     >
-      <MaterialIcons name={item.icon} size={32} color="#1E293B" />
-      <Text style={styles.cardText}>{item.title}</Text>
+      <View style={[styles.iconBox, { backgroundColor: color }]}>
+        <MaterialIcons name={icon} size={32} color="white" />
+      </View>
+      <Text style={styles.cardTitle}>{title}</Text>
+      <MaterialIcons name="chevron-right" size={24} color="#CBD5E1" />
     </TouchableOpacity>
   );
 
+  // --- RENDER DIFFERENT MENUS BASED ON ROLE ---
+  const renderMenu = () => {
+    switch (currentUser.role) {
+      case 'corporate':
+        return (
+          <>
+            <MenuButton title="Post New Job" icon="add-circle" color="#2563EB" route="PostJob" />
+            <MenuButton title="My Proposals" icon="list" color="#0F172A" route="CorporateProposals" />
+            <MenuButton title="View Applicants" icon="people" color="#10B981" route="CorporateApplicants" />
+            <MenuButton title="Company Profile" icon="business" color="#64748B" route="CorporateProfile" />
+          </>
+        );
+      case 'admin':
+        return (
+          <>
+            <MenuButton title="Review Proposals" icon="rate-review" color="#F59E0B" route="AdminReview" />
+            <MenuButton title="Verify Companies" icon="verified-user" color="#7C3AED" route="AdminVerify" />
+          </>
+        );
+      case 'pc':
+        return (
+          <>
+            <MenuButton title="Approve for Students" icon="check-circle" color="#059669" route="PcReview" />
+            <MenuButton title="Placement Statistics" icon="bar-chart" color="#2563EB" route="PcStats" />
+          </>
+        );
+      default: // STUDENT
+        return (
+          <>
+            <MenuButton title="Latest Opportunities" icon="work" color="#2563EB" route="StudentJobs" />
+            <MenuButton title="My Applications" icon="assignment" color="#0F172A" route="StudentApplications" />
+            <MenuButton title="My Profile" icon="person" color="#64748B" route="StudentProfile" />
+          </>
+        );
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
+      {/* Header Section */}
       <View style={styles.header}>
-        {/* LEFT SIDE: Back Button + Title */}
-        <View style={styles.headerLeft}>
-          <TouchableOpacity 
-            onPress={() => navigation.replace('Login')} 
-            style={styles.backButton}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#1E293B" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{role} Dashboard</Text>
+        <View>
+          <Text style={styles.greeting}>Welcome back,</Text>
+          <Text style={styles.userName}>{currentUser.name}</Text>
+          <Text style={styles.userRole}>{currentUser.role.toUpperCase()} • {currentUser.universityName}</Text>
         </View>
-
-        {/* RIGHT SIDE: Notifications & Logout */}
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Notifications', { role })} 
-            style={{ marginRight: 16 }}
-          >
-            <MaterialIcons name="notifications-none" size={28} color="#1E293B" />
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => navigation.replace('Login')}>
-            <MaterialIcons name="logout" size={24} color="red" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+          <MaterialIcons name="notifications-none" size={28} color="#1E293B" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.content}>
-        <Text style={styles.welcomeText}>Welcome, {role}</Text>
-        
-        <FlatList
-          data={getMenuOptions()}
-          renderItem={renderCard}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={styles.gridContainer}
-          columnWrapperStyle={styles.row}
-        />
+      {/* Dynamic Menu Grid */}
+      <View style={styles.menuContainer}>
+        {renderMenu()}
       </View>
-    </View>
+
+      {/* Logout Button */}
+      <TouchableOpacity 
+        style={styles.logoutButton}
+        onPress={() => navigation.replace('InstitutionSelection')}
+      >
+        <Text style={styles.logoutText}>Log Out</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingTop: 50, paddingHorizontal: 20, paddingBottom: 20,
-    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
+    padding: 24,
+    paddingTop: 60,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  headerLeft: {
+  greeting: { fontSize: 16, color: '#64748B' },
+  userName: { fontSize: 24, fontWeight: 'bold', color: '#1E293B' },
+  userRole: { fontSize: 12, color: '#2563EB', fontWeight: 'bold', marginTop: 4 },
+  
+  menuContainer: { padding: 20 },
+  
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  backButton: {
-    marginRight: 12,
+  iconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#1E293B' },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
-  content: { flex: 1, padding: 24 },
-  welcomeText: { fontSize: 20, fontWeight: 'bold', marginBottom: 32, color: '#1E293B' },
-  gridContainer: { paddingBottom: 20 },
-  row: { justifyContent: 'space-between', marginBottom: 16 },
-  card: {
-    backgroundColor: '#F8FAFC', width: '47%', aspectRatio: 1,
-    justifyContent: 'center', alignItems: 'center', borderRadius: 16,
-    borderWidth: 1, borderColor: 'rgba(150, 150, 150, 0.1)',
+  cardTitle: { fontSize: 18, fontWeight: '600', color: '#1E293B', flex: 1 },
+  
+  logoutButton: {
+    alignSelf: 'center',
+    marginTop: 20,
+    marginBottom: 40,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
   },
-  cardText: { marginTop: 10, fontWeight: '600', color: '#1E293B', textAlign: 'center' },
+  logoutText: { color: '#EF4444', fontWeight: '600', fontSize: 16 },
 });
 
 export default DashboardScreen;

@@ -1,91 +1,93 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { JobContext } from '../../context/JobContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const CorporateProposalsScreen = () => {
-  const { jobs } = useContext(JobContext);
+  const { jobs, currentUser } = useContext(JobContext);
 
-  // Filter jobs for "My Company"
-  const myJobs = jobs.filter(job => job.company === "My Company");
+  // FILTER LOGIC: Only show jobs posted by the currently logged-in user
+  const myProposals = jobs.filter(job => job.postedBy === currentUser?.email);
 
-  const getStatusBadge = (status) => {
-    let color = '#F59E0B'; // Orange (Pending)
-    let icon = 'hourglass-empty';
-
-    if (status === 'Approved' || status === 'Published') {
-      color = '#22C55E'; // Green
-      icon = 'check-circle';
-    } else if (status === 'Rejected') {
-      color = '#EF4444'; // Red
-      icon = 'cancel';
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'live': return '#10b981';    // Green
+      case 'approved': return '#3b82f6'; // Blue
+      case 'rejected': return '#ef4444'; // Red
+      default: return '#f59e0b';         // Orange (Pending)
     }
-
-    return (
-      <View style={[styles.badge, { backgroundColor: `${color}15` }]}>
-        <MaterialIcons name={icon} size={14} color={color} />
-        <Text style={[styles.badgeText, { color }]}>{status}</Text>
-      </View>
-    );
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.dateText}>Submitted: Today</Text>
-        {getStatusBadge(item.status)}
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{item.title}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+          <Text style={styles.statusText}>{item.status?.toUpperCase() || 'PENDING'}</Text>
+        </View>
       </View>
+
+      <Text style={styles.date}>Posted on: {new Date(item.date).toLocaleDateString()}</Text>
       
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
-      
-      <View style={styles.divider} />
-      
-      <View style={styles.footer}>
-        <MaterialIcons name="info-outline" size={16} color="#64748B" />
-        <Text style={styles.footerText}>
-          {item.status === 'Pending' ? "Waiting for Admin Review" : 
-           (item.status === 'Published' ? "Live for Students" : "Status Updated")}
-        </Text>
+      <View style={styles.statsRow}>
+        <View style={styles.stat}>
+          <MaterialIcons name="people" size={16} color="#64748b" />
+          <Text style={styles.statText}>
+            {item.applications ? item.applications.length : 0} Applicants
+          </Text>
+        </View>
+        <View style={styles.stat}>
+          <MaterialIcons name="visibility" size={16} color="#64748b" />
+          <Text style={styles.statText}>
+            {item.status === 'live' ? 'Visible to Students' : 'Under Review'}
+          </Text>
+        </View>
       </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={myJobs}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ padding: 16 }}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <MaterialIcons name="post-add" size={64} color="#E2E8F0" />
-            <Text style={styles.emptyText}>No proposals submitted yet</Text>
-          </View>
-        }
-      />
+      {myProposals.length > 0 ? (
+        <FlatList
+          data={myProposals}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16 }}
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <MaterialIcons name="post-add" size={64} color="#cbd5e1" />
+          <Text style={styles.emptyText}>You haven't posted any jobs yet.</Text>
+          <Text style={styles.subText}>Go to "Post New Job" to create one.</Text>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
   card: {
-    backgroundColor: 'white', borderRadius: 12, padding: 16, marginBottom: 16,
-    borderWidth: 1, borderColor: '#E2E8F0',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    elevation: 2,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  dateText: { fontSize: 12, color: '#94A3B8' },
-  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20 },
-  badgeText: { fontSize: 12, fontWeight: 'bold', marginLeft: 4 },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
-  desc: { color: '#64748B', marginBottom: 16 },
-  divider: { height: 1, backgroundColor: '#E2E8F0', marginBottom: 12 },
-  footer: { flexDirection: 'row', alignItems: 'center' },
-  footerText: { marginLeft: 8, fontSize: 13, color: '#64748B' },
-  emptyContainer: { alignItems: 'center', marginTop: 100 },
-  emptyText: { color: '#94A3B8', marginTop: 16 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', flex: 1, marginRight: 10 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  date: { fontSize: 12, color: '#94a3b8', marginBottom: 12 },
+  statsRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 12 },
+  stat: { flexDirection: 'row', alignItems: 'center', marginRight: 20 },
+  statText: { marginLeft: 6, color: '#64748b', fontSize: 13, fontWeight: '500' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -50 },
+  emptyText: { fontSize: 18, fontWeight: 'bold', color: '#64748b', marginTop: 16 },
+  subText: { color: '#94a3b8', marginTop: 8 }
 });
 
 export default CorporateProposalsScreen;

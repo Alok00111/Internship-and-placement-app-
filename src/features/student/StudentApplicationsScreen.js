@@ -1,13 +1,15 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, FlatList, MaterialIcons } from 'react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { JobContext } from '../../context/JobContext';
 
 const StudentApplicationsScreen = () => {
   const { jobs, currentUser } = useContext(JobContext);
 
-  // Filter all jobs to find where the current student has applied
-  // We check if the student's name exists in the applications array of any job
-  const myApplications = jobs.reduce((acc, job) => {
+  // 1. First, look ONLY at jobs from the student's university
+  const universityJobs = jobs.filter(job => job.universityId === currentUser?.universityId);
+
+  // 2. Then find where the student has applied within those jobs
+  const myApplications = universityJobs.reduce((acc, job) => {
     if (job.applications) {
       const userApp = job.applications.find(app => app.studentName === currentUser?.name);
       if (userApp) {
@@ -76,13 +78,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
+  cardInfo: { flex: 1 },
   jobTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b' },
   companyName: { fontSize: 14, color: '#64748b', marginTop: 2 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginLeft: 10 },
   statusText: { fontSize: 12, fontWeight: 'bold' },
-  statusApplied: { backgroundColor: '#dcfce7' }, // Light Green
-  statusShortlisted: { backgroundColor: '#dbeafe' }, // Light Blue
-  statusRejected: { backgroundColor: '#fee2e2' }, // Light Red
+  statusApplied: { backgroundColor: '#dcfce7' }, 
+  statusShortlisted: { backgroundColor: '#dbeafe' }, 
+  statusRejected: { backgroundColor: '#fee2e2' }, 
   statusDefault: { backgroundColor: '#f1f5f9' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { color: '#94a3b8', fontSize: 16 },

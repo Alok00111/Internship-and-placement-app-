@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react
 import { JobContext } from '../../context/JobContext';
 
 const PcReviewScreen = () => {
-  const { jobs, updateJobStatus } = useContext(JobContext);
+  const { jobs, updateJobStatus,currentUser } = useContext(JobContext);
 
   // PC reviews jobs that are already 'approved' by Admin
-  const jobsToVerify = jobs.filter(job => job.status === 'approved');
+  const jobsToVerify = jobs.filter(job => job.status === 'approved'&& 
+  job.universityId === currentUser?.universityId);
 
   const handlePcAction = (id, status) => {
     // If PC approves, it goes 'live' for students

@@ -1,132 +1,133 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { JobContext } from '../../context/JobContext';
 
-const ROLES = ["Student", "Corporate", "Master Admin", "Placement Coordinator"];
-
-const LoginScreen = ({ navigation }) => {
-  const [selectedRole, setSelectedRole] = useState(null);
+const LoginScreen = ({ navigation, route }) => {
   const { setCurrentUser } = useContext(JobContext);
+  
+  // 1. Get the University Name passed from the previous screen
+  const { universityName, universityId } = route.params || { universityName: 'Placement Portal', universityId: null };
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    if (!selectedRole) {
-      Alert.alert("Error", "Please select a role first.");
+    // Basic validation
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    // Update global user state
-    setCurrentUser(prev => ({ ...prev, role: selectedRole }));
+    // SIMULATED LOGIN LOGIC
+    // In the future, we will send 'universityId' to the backend here
+    let userRole = 'student'; 
+    let userName = 'Student User';
 
-    // Navigate to Dashboard and pass the role param
-    navigation.replace('Dashboard', { role: selectedRole });
+    if (email.includes('admin')) {
+      userRole = 'admin';
+      userName = 'Admin User';
+    } else if (email.includes('corp')) {
+      userRole = 'corporate';
+      userName = 'Corporate Partner';
+    } else if (email.includes('pc')) {
+      userRole = 'pc';
+      userName = 'Placement Coordinator';
+    }
+
+    // Save to Context
+    const userData = { 
+      name: userName, 
+      email: email, 
+      role: userRole,
+      universityId: universityId, // Save which uni they belong to
+      universityName: universityName
+    };
+    
+    setCurrentUser(userData);
+
+    // Navigate to Dashboard
+    navigation.replace('Dashboard');
   };
 
   return (
-    <View style={styles.container}>
-      <MaterialIcons name="school" size={60} color="#1E293B" />
-      <Text style={styles.title}>CUIPMS Portal</Text>
-
-      {/* Role Selection Grid */}
-      <View style={styles.roleContainer}>
-        <Text style={styles.label}>Select Role:</Text>
-        <View style={styles.roleList}>
-          {ROLES.map((role) => (
-            <TouchableOpacity
-              key={role}
-              style={[
-                styles.roleButton,
-                selectedRole === role && styles.roleButtonSelected
-              ]}
-              onPress={() => setSelectedRole(role)}
-            >
-              <Text style={[
-                styles.roleText,
-                selectedRole === role && styles.roleTextSelected
-              ]}>
-                {role}
-              </Text>
-            </TouchableOpacity>
-          ))}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <View style={styles.logoContainer}>
+        {/* Placeholder Logo */}
+        <View style={styles.logoBox}>
+          <Text style={styles.logoText}>{universityName[0]}</Text>
         </View>
+        
+        {/* 2. Dynamic Title based on Selection */}
+        <Text style={styles.welcomeText}>Login to</Text>
+        <Text style={styles.uniName}>{universityName}</Text>
       </View>
 
-      {/* Login Button */}
-      <TouchableOpacity 
-        style={[styles.loginButton, !selectedRole && styles.loginButtonDisabled]}
-        onPress={handleLogin}
-        disabled={!selectedRole}
-      >
-        <Text style={styles.loginButtonText}>Login</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.formContainer}>
+        <Text style={styles.label}>Email Address</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <Text style={styles.loginButtonText}>Sign In</Text>
+        </TouchableOpacity>
+
+        {/* 3. Option to go back and change university */}
+        <TouchableOpacity 
+          style={styles.changeUniButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.changeUniText}>Change University</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+  container: { flex: 1, backgroundColor: '#f8fafc', justifyContent: 'center' },
+  logoContainer: { alignItems: 'center', marginBottom: 40 },
+  logoBox: {
+    width: 80, height: 80, backgroundColor: '#0f172a', borderRadius: 20,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 15,
+    elevation: 5
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 24,
-    marginBottom: 40,
-    color: '#1E293B',
-  },
-  roleContainer: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 12,
-    color: '#64748B',
-  },
-  roleList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  roleButton: {
-    width: '48%',
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  roleButtonSelected: {
-    backgroundColor: '#1E293B',
-    borderColor: '#1E293B',
-  },
-  roleText: {
-    color: '#1E293B',
-  },
-  roleTextSelected: {
-    color: 'white',
-    fontWeight: 'bold',
+  logoText: { color: '#fff', fontSize: 40, fontWeight: 'bold' },
+  welcomeText: { fontSize: 16, color: '#64748b' },
+  uniName: { fontSize: 24, fontWeight: 'bold', color: '#1e293b', textAlign: 'center', paddingHorizontal: 20 },
+  
+  formContainer: { paddingHorizontal: 30 },
+  label: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 8 },
+  input: {
+    backgroundColor: '#fff', padding: 15, borderRadius: 10, marginBottom: 20,
+    borderWidth: 1, borderColor: '#e2e8f0', color: '#1e293b'
   },
   loginButton: {
-    width: '100%',
-    backgroundColor: '#1E293B',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
+    backgroundColor: '#2563eb', padding: 18, borderRadius: 12,
+    alignItems: 'center', marginTop: 10, shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5
   },
-  loginButtonDisabled: {
-    backgroundColor: '#94A3B8',
-  },
-  loginButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  loginButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  
+  changeUniButton: { marginTop: 20, alignItems: 'center' },
+  changeUniText: { color: '#64748b', fontSize: 14, textDecorationLine: 'underline' }
 });
 
 export default LoginScreen;
